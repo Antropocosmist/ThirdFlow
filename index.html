@@ -1,0 +1,1049 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>BTC/USDT — Реальное время</title>
+        <style>
+            *,
+            *::before,
+            *::after {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    sans-serif;
+                background: #0a0e14;
+                color: #e6e1cf;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .container {
+                text-align: center;
+                padding: 48px;
+                border-radius: 20px;
+                background: #131721;
+                border: 1px solid #1f2533;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+                min-width: 380px;
+            }
+
+            .header {
+                font-size: 14px;
+                letter-spacing: 3px;
+                text-transform: uppercase;
+                color: #5c6370;
+                margin-bottom: 8px;
+            }
+
+            .wallet-row {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 12px;
+                margin-bottom: 20px;
+                flex-wrap: wrap;
+            }
+
+            .btn-wallet {
+                padding: 8px 20px;
+                border-radius: 10px;
+                border: 1px solid #2a3040;
+                background: #1a2030;
+                color: #e6e1cf;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                font-family: inherit;
+            }
+
+            .btn-wallet:hover {
+                background: #252d3a;
+                border-color: #3a4558;
+            }
+
+            .btn-wallet.connected {
+                background: #1a2a20;
+                border-color: #2a4a30;
+                color: #73d0a1;
+            }
+
+            .btn-wallet.keplr-connected {
+                background: #201a2a;
+                border-color: #3a2a5a;
+                color: #b39ddb;
+            }
+
+            .wallet-row + .wallet-row {
+                margin-top: -12px;
+            }
+
+            .wallet-info {
+                display: none;
+                font-size: 12px;
+                color: #5c6370;
+                gap: 16px;
+            }
+
+            .wallet-info.show {
+                display: flex;
+            }
+
+            .wallet-info span {
+                color: #e6e1cf;
+                font-weight: 600;
+            }
+
+            .price {
+                font-size: 64px;
+                font-weight: 700;
+                font-variant-numeric: tabular-nums;
+                letter-spacing: -1px;
+                line-height: 1;
+                margin-bottom: 12px;
+                transition: color 0.3s;
+            }
+
+            .price.up {
+                color: #73d0a1;
+            }
+            .price.down {
+                color: #f07178;
+            }
+            .price.neutral {
+                color: #e6e1cf;
+            }
+
+            .change {
+                font-size: 18px;
+                font-weight: 600;
+                margin-bottom: 32px;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .change.positive {
+                color: #73d0a1;
+            }
+            .change.negative {
+                color: #f07178;
+            }
+
+            .stats {
+                display: flex;
+                justify-content: center;
+                gap: 40px;
+                font-size: 14px;
+                color: #5c6370;
+            }
+
+            .stats span {
+                display: block;
+                color: #e6e1cf;
+                font-weight: 600;
+                font-size: 16px;
+                margin-top: 4px;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .chart-wrap {
+                margin-top: 28px;
+                border-radius: 12px;
+                overflow: hidden;
+                background: #0d1117;
+                border: 1px solid #1f2533;
+                position: relative;
+            }
+
+            .chart-label {
+                position: absolute;
+                top: 8px;
+                left: 12px;
+                font-size: 11px;
+                color: #5c6370;
+                letter-spacing: 2px;
+                text-transform: uppercase;
+                z-index: 1;
+            }
+
+            canvas {
+                display: block;
+            }
+
+            .status {
+                margin-top: 20px;
+                font-size: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+            }
+
+            .dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                display: inline-block;
+            }
+            .dot.live {
+                background: #73d0a1;
+                animation: pulse 2s infinite;
+            }
+            .dot.dead {
+                background: #f07178;
+            }
+
+            @keyframes pulse {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.3;
+                }
+            }
+
+            .game-wrap {
+                margin-top: 20px;
+                border-radius: 12px;
+                overflow: hidden;
+                background: #0d1117;
+                border: 1px solid #1f2533;
+                position: relative;
+            }
+
+            .game-label {
+                position: absolute;
+                top: 8px;
+                left: 12px;
+                font-size: 11px;
+                color: #5c6370;
+                letter-spacing: 2px;
+                text-transform: uppercase;
+                z-index: 2;
+            }
+
+            .game-score {
+                position: absolute;
+                top: 8px;
+                right: 12px;
+                font-size: 11px;
+                color: #f0c040;
+                letter-spacing: 2px;
+                z-index: 2;
+            }
+
+            .leaderboard {
+                margin-top: 20px;
+                padding: 16px 20px;
+                border-radius: 12px;
+                background: #0d1117;
+                border: 1px solid #1f2533;
+            }
+
+            .leaderboard h3 {
+                font-size: 12px;
+                letter-spacing: 2px;
+                text-transform: uppercase;
+                color: #5c6370;
+                margin-bottom: 10px;
+            }
+
+            .lb-row {
+                display: flex;
+                justify-content: space-between;
+                font-size: 13px;
+                padding: 4px 0;
+                border-bottom: 1px solid #151a24;
+            }
+
+            .lb-row:last-child {
+                border-bottom: none;
+            }
+
+            .lb-pos {
+                color: #5c6370;
+                width: 28px;
+            }
+            .lb-pos.gold {
+                color: #f0c040;
+            }
+            .lb-pos.silver {
+                color: #c0c0c0;
+            }
+            .lb-pos.bronze {
+                color: #cd7f32;
+            }
+
+            .lb-name {
+                color: #e6e1cf;
+                flex: 1;
+                text-align: left;
+                padding-left: 8px;
+            }
+
+            .lb-score {
+                color: #73d0a1;
+                font-weight: 600;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">BTC / USDT</div>
+            <div class="wallet-row">
+                <button
+                    class="btn-wallet"
+                    id="btnWallet"
+                    onclick="toggleWallet()"
+                >
+                    👻 Подключить MetaMask
+                </button>
+                <div class="wallet-info" id="walletInfo">
+                    <span id="walletAddr"></span>
+                    <span id="walletBalance"></span>
+                    <span id="walletChain"></span>
+                </div>
+            </div>
+            <div class="wallet-row">
+                <button
+                    class="btn-wallet"
+                    id="btnKeplr"
+                    onclick="toggleKeplr()"
+                >
+                    ⚛️ Подключить Keplr
+                </button>
+                <div class="wallet-info" id="keplrInfo">
+                    <span id="keplrAddr"></span>
+                    <span id="keplrBalance"></span>
+                    <span id="keplrChain"></span>
+                </div>
+            </div>
+            <div class="price neutral" id="price">—</div>
+            <div class="change" id="change">—</div>
+            <div class="stats">
+                <div>24h High<span id="high">—</span></div>
+                <div>24h Low<span id="low">—</span></div>
+                <div>Volume<span id="volume">—</span></div>
+            </div>
+            <div class="chart-wrap">
+                <div class="chart-label">1M Chart</div>
+                <canvas id="chart"></canvas>
+            </div>
+            <div class="game-wrap">
+                <div class="game-label">🏎️ BTC RACER</div>
+                <div class="game-score" id="gameScore">SCORE: 0</div>
+                <canvas id="game" tabindex="0"></canvas>
+            </div>
+            <div class="leaderboard" id="leaderboard">
+                <h3>🏆 ЛИДЕРБОРД</h3>
+                <div id="lbList"></div>
+            </div>
+            <div class="status">
+                <span class="dot" id="dot"></span>
+                <span id="statusText">Подключение...</span>
+            </div>
+        </div>
+
+        <script>
+            const $ = (id) => document.getElementById(id);
+            const priceEl = $("price");
+            const changeEl = $("change");
+            const highEl = $("high");
+            const lowEl = $("low");
+            const volumeEl = $("volume");
+            const dotEl = $("dot");
+            const statusEl = $("statusText");
+
+            // ---- Wallet ----
+            const btnWallet = $("btnWallet");
+            const walletInfo = $("walletInfo");
+            const walletAddr = $("walletAddr");
+            const walletBalance = $("walletBalance");
+            const walletChain = $("walletChain");
+
+            let walletAccount = null;
+
+            const CHAIN_NAMES = {
+                "0x1": "Ethereum",
+                "0x5": "Goerli",
+                "0xaa36a7": "Sepolia",
+                "0x89": "Polygon",
+                "0xa86a": "Avalanche C",
+                "0x38": "BSC",
+                "0xa4b1": "Arbitrum",
+                "0xa": "Optimism",
+            };
+
+            function shortAddr(addr) {
+                return addr.slice(0, 6) + "..." + addr.slice(-4);
+            }
+
+            async function updateWalletUI() {
+                if (!walletAccount || !window.ethereum) return;
+                try {
+                    const [balanceHex, chainId] = await Promise.all([
+                        window.ethereum.request({
+                            method: "eth_getBalance",
+                            params: [walletAccount, "latest"],
+                        }),
+                        window.ethereum.request({ method: "eth_chainId" }),
+                    ]);
+                    const bal = (parseInt(balanceHex, 16) / 1e18).toFixed(3);
+                    const chain = CHAIN_NAMES[chainId] || chainId;
+
+                    walletAddr.textContent = shortAddr(walletAccount);
+                    walletBalance.textContent = bal + " ETH";
+                    walletChain.textContent = chain;
+                } catch {
+                    walletBalance.textContent = "—";
+                }
+            }
+
+            async function connectWallet() {
+                if (!window.ethereum) {
+                    alert("MetaMask не установлен. Установите расширение.");
+                    return;
+                }
+                try {
+                    const accounts = await window.ethereum.request({
+                        method: "eth_requestAccounts",
+                    });
+                    walletAccount = accounts[0];
+                    btnWallet.textContent = "🦊 Отключить";
+                    btnWallet.classList.add("connected");
+                    walletInfo.classList.add("show");
+                    await updateWalletUI();
+                } catch (err) {
+                    if (err.code === 4001) return;
+                    console.error(err);
+                }
+            }
+
+            function disconnectWallet() {
+                walletAccount = null;
+                btnWallet.textContent = "👻 Подключить MetaMask";
+                btnWallet.classList.remove("connected");
+                walletInfo.classList.remove("show");
+                walletAddr.textContent = "";
+                walletBalance.textContent = "";
+                walletChain.textContent = "";
+            }
+
+            async function toggleWallet() {
+                if (walletAccount) {
+                    disconnectWallet();
+                } else {
+                    await connectWallet();
+                }
+            }
+
+            if (window.ethereum) {
+                window.ethereum.on("accountsChanged", (accounts) => {
+                    if (accounts.length === 0) {
+                        disconnectWallet();
+                    } else {
+                        walletAccount = accounts[0];
+                        updateWalletUI();
+                    }
+                });
+                window.ethereum.on("chainChanged", () => {
+                    if (walletAccount) updateWalletUI();
+                });
+            }
+
+            // ---- Keplr ----
+            const btnKeplr = $("btnKeplr");
+            const keplrInfo = $("keplrInfo");
+            const keplrAddr = $("keplrAddr");
+            const keplrBalance = $("keplrBalance");
+            const keplrChain = $("keplrChain");
+
+            const KEPLR_CHAIN = "cosmoshub-4";
+            const KEPLR_REST = "https://cosmos-rest.publicnode.com";
+            let keplrAccount = null;
+
+            async function updateKeplrUI() {
+                if (!keplrAccount || !window.keplr) return;
+                try {
+                    const key = await window.keplr.getKey(KEPLR_CHAIN);
+                    keplrAddr.textContent = shortAddr(key.bech32Address);
+                    keplrChain.textContent = "Cosmos Hub";
+
+                    const url =
+                        KEPLR_REST +
+                        "/cosmos/bank/v1beta1/balances/" +
+                        key.bech32Address;
+                    const res = await fetch(url);
+                    const json = await res.json();
+                    const atom =
+                        json.balances?.find((b) => b.denom === "uatom") || null;
+                    keplrBalance.textContent = atom
+                        ? (parseInt(atom.amount) / 1e6).toFixed(3) + " ATOM"
+                        : "0 ATOM";
+                } catch {
+                    keplrBalance.textContent = "—";
+                }
+            }
+
+            async function connectKeplr() {
+                if (!window.keplr) {
+                    alert("Keplr не установлен. Установите расширение.");
+                    return;
+                }
+                try {
+                    await window.keplr.enable(KEPLR_CHAIN);
+                    const key = await window.keplr.getKey(KEPLR_CHAIN);
+                    keplrAccount = key.bech32Address;
+                    btnKeplr.textContent = "⚛️ Отключить";
+                    btnKeplr.classList.add("keplr-connected");
+                    keplrInfo.classList.add("show");
+                    await updateKeplrUI();
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+
+            function disconnectKeplr() {
+                keplrAccount = null;
+                btnKeplr.textContent = "⚛️ Подключить Keplr";
+                btnKeplr.classList.remove("keplr-connected");
+                keplrInfo.classList.remove("show");
+                keplrAddr.textContent = "";
+                keplrBalance.textContent = "";
+                keplrChain.textContent = "";
+            }
+
+            async function toggleKeplr() {
+                if (keplrAccount) {
+                    disconnectKeplr();
+                } else {
+                    await connectKeplr();
+                }
+            }
+
+            const fmt = (n, d = 2) => {
+                const val = Number(n);
+                if (val >= 1000)
+                    return (
+                        "$" +
+                        val.toLocaleString("en-US", {
+                            minimumFractionDigits: d,
+                            maximumFractionDigits: d,
+                        })
+                    );
+                return "$" + val.toFixed(d);
+            };
+
+            const fmtCompact = (n) => {
+                const val = Number(n);
+                if (val >= 1_000_000_000)
+                    return (val / 1_000_000_000).toFixed(1) + "B";
+                if (val >= 1_000_000) return (val / 1_000_000).toFixed(1) + "M";
+                if (val >= 1_000) return (val / 1_000).toFixed(1) + "K";
+                return val.toFixed(0);
+            };
+
+            const CANVAS_W = 604;
+            const CANVAS_H = 200;
+            const PAD = { top: 20, right: 12, bottom: 30, left: 60 };
+            const WINDOW_MS = 60_000;
+            const data = [];
+
+            const chartEl = $("chart");
+            chartEl.width = CANVAS_W;
+            chartEl.height = CANVAS_H;
+            const ctx = chartEl.getContext("2d");
+
+            function addPoint(price) {
+                const now = Date.now();
+                data.push({ t: now, p: price });
+                while (data.length && data[0].t < now - WINDOW_MS) data.shift();
+            }
+
+            function draw() {
+                const now = Date.now();
+                while (data.length && data[0].t < now - WINDOW_MS) data.shift();
+
+                const w = CANVAS_W - PAD.left - PAD.right;
+                const h = CANVAS_H - PAD.top - PAD.bottom;
+
+                ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+                if (data.length < 2) return;
+
+                const prices = data.map((d) => d.p);
+                const minP = Math.min(...prices);
+                const maxP = Math.max(...prices);
+                const range = maxP - minP || 1;
+
+                const padRange = range * 0.1;
+                const yMin = minP - padRange;
+                const yMax = maxP + padRange;
+                const ySpan = yMax - yMin;
+
+                const sx = (t) =>
+                    PAD.left + ((t - (now - WINDOW_MS)) / WINDOW_MS) * w;
+                const sy = (p) => PAD.top + h - ((p - yMin) / ySpan) * h;
+
+                // Grid
+                ctx.strokeStyle = "#1a2030";
+                ctx.lineWidth = 0.5;
+                const gridLines = 4;
+                for (let i = 0; i <= gridLines; i++) {
+                    const y = PAD.top + (h / gridLines) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(PAD.left, y);
+                    ctx.lineTo(CANVAS_W - PAD.right, y);
+                    ctx.stroke();
+                }
+
+                // Y labels
+                ctx.fillStyle = "#4a5568";
+                ctx.font = "10px -apple-system, sans-serif";
+                ctx.textAlign = "right";
+                for (let i = 0; i <= gridLines; i++) {
+                    const val = yMax - (ySpan / gridLines) * i;
+                    const y = PAD.top + (h / gridLines) * i;
+                    const dec = val >= 100 ? 2 : val >= 1 ? 2 : 4;
+                    ctx.fillText("$" + val.toFixed(dec), PAD.left - 6, y + 3);
+                }
+
+                // X labels
+                ctx.textAlign = "center";
+                for (let s = 0; s <= 60; s += 15) {
+                    const x = sx(now - (60 - s) * 1000);
+                    ctx.fillText(s + "s", x, CANVAS_H - 8);
+                }
+
+                // Area fill
+                ctx.beginPath();
+                ctx.moveTo(sx(data[0].t), sy(data[0].p));
+                for (let i = 1; i < data.length; i++) {
+                    ctx.lineTo(sx(data[i].t), sy(data[i].p));
+                }
+                const lastX = sx(data[data.length - 1].t);
+                const firstX = sx(data[0].t);
+                ctx.lineTo(lastX, PAD.top + h);
+                ctx.lineTo(firstX, PAD.top + h);
+                ctx.closePath();
+                const grad = ctx.createLinearGradient(
+                    0,
+                    PAD.top,
+                    0,
+                    PAD.top + h,
+                );
+                grad.addColorStop(0, "rgba(115,208,161,0.18)");
+                grad.addColorStop(1, "rgba(115,208,161,0.01)");
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                // Line
+                ctx.beginPath();
+                ctx.moveTo(sx(data[0].t), sy(data[0].p));
+                for (let i = 1; i < data.length; i++) {
+                    ctx.lineTo(sx(data[i].t), sy(data[i].p));
+                }
+                ctx.strokeStyle = "#73d0a1";
+                ctx.lineWidth = 1.8;
+                ctx.lineJoin = "round";
+                ctx.stroke();
+            }
+
+            let lastPrice = null;
+
+            function connect() {
+                const ws = new WebSocket(
+                    "wss://stream.binance.com:9443/ws/btcusdt@ticker",
+                );
+
+                ws.onopen = () => {
+                    dotEl.className = "dot live";
+                    statusEl.textContent = "В реальном времени";
+                };
+
+                ws.onmessage = (e) => {
+                    const t = JSON.parse(e.data);
+
+                    const price = parseFloat(t.c);
+                    const change = parseFloat(t.P);
+                    const high = parseFloat(t.h);
+                    const low = parseFloat(t.l);
+                    const volume = parseFloat(t.v);
+
+                    let dir = "neutral";
+                    if (lastPrice !== null) {
+                        dir =
+                            price > lastPrice
+                                ? "up"
+                                : price < lastPrice
+                                  ? "down"
+                                  : "neutral";
+                    }
+                    priceEl.className = "price " + dir;
+
+                    const dec = price >= 100 ? 2 : price >= 1 ? 2 : 4;
+                    priceEl.textContent = fmt(price, dec);
+                    changeEl.textContent =
+                        (change >= 0 ? "+" : "") + change.toFixed(2) + "%";
+                    changeEl.className =
+                        "change " + (change >= 0 ? "positive" : "negative");
+                    highEl.textContent = fmt(high, dec);
+                    lowEl.textContent = fmt(low, dec);
+                    volumeEl.textContent = fmtCompact(volume);
+
+                    addPoint(price);
+                    lastPrice = price;
+                    feedGamePrice(price);
+                };
+
+                ws.onerror = () => {
+                    dotEl.className = "dot dead";
+                    statusEl.textContent = "Ошибка соединения";
+                };
+
+                ws.onclose = () => {
+                    dotEl.className = "dot dead";
+                    statusEl.textContent = "Переподключение через 3 сек...";
+                    setTimeout(connect, 3000);
+                };
+            }
+
+            function tick() {
+                draw();
+                requestAnimationFrame(tick);
+            }
+
+            // ---- Game ----
+            const GW = 604;
+            const GH = 400;
+            const ROAD_W = 120;
+            const CAR_W = 32;
+            const CAR_H = 48;
+            const SEG_H = 6;
+            const SEG_COUNT = Math.ceil(GH / SEG_H) + 2;
+            const CAR_Y = GH - 80;
+
+            const gameCanvas = $("game");
+            gameCanvas.width = GW;
+            gameCanvas.height = GH;
+            const gctx = gameCanvas.getContext("2d");
+            const scoreEl = $("gameScore");
+            const lbList = $("lbList");
+
+            let roadSegments = [];
+            let carX = GW / 2;
+            let scrollOffset = 0;
+            let score = 0;
+            let gameOver = false;
+            let lastPriceForGame = null;
+            let roadTargetX = GW / 2;
+            let gameSubmitted = false;
+            let playerNameInput = "";
+
+            // ---- Leaderboard ----
+            const LB_KEY = "btcRacerScores";
+
+            function loadScores() {
+                try {
+                    return JSON.parse(localStorage.getItem(LB_KEY)) || [];
+                } catch {
+                    return [];
+                }
+            }
+
+            function saveScore(name, sc) {
+                const scores = loadScores();
+                scores.push({ name, score: Math.floor(sc), date: Date.now() });
+                scores.sort((a, b) => b.score - a.score);
+                const top = scores.slice(0, 10);
+                localStorage.setItem(LB_KEY, JSON.stringify(top));
+                return top;
+            }
+
+            function renderLeaderboard() {
+                const scores = loadScores();
+                if (!scores.length) {
+                    lbList.innerHTML =
+                        '<div style="color:#5c6370;font-size:12px;text-align:center;padding:8px">Пока пусто — будь первым!</div>';
+                    return;
+                }
+                lbList.innerHTML = scores
+                    .map((s, i) => {
+                        const posClass =
+                            i === 0
+                                ? "gold"
+                                : i === 1
+                                  ? "silver"
+                                  : i === 2
+                                    ? "bronze"
+                                    : "";
+                        return `<div class="lb-row">
+                            <span class="lb-pos ${posClass}">#${i + 1}</span>
+                            <span class="lb-name">${s.name}</span>
+                            <span class="lb-score">${s.score}</span>
+                        </div>`;
+                    })
+                    .join("");
+            }
+
+            renderLeaderboard();
+
+            // ---- Input ----
+            const keys = {};
+            window.addEventListener("keydown", (e) => {
+                if (
+                    [
+                        "ArrowLeft",
+                        "ArrowRight",
+                        "ArrowUp",
+                        "ArrowDown",
+                        "a",
+                        "d",
+                    ].includes(e.key)
+                ) {
+                    keys[e.key] = true;
+                    e.preventDefault();
+                }
+                if (gameOver && !gameSubmitted) {
+                    if (e.key === "Enter" && playerNameInput.length > 0) {
+                        const top = saveScore(playerNameInput, score);
+                        gameSubmitted = true;
+                        renderLeaderboard();
+                        e.preventDefault();
+                    } else if (e.key === "Backspace") {
+                        playerNameInput = playerNameInput.slice(0, -1);
+                        e.preventDefault();
+                    } else if (
+                        e.key.length === 1 &&
+                        playerNameInput.length < 12
+                    ) {
+                        playerNameInput += e.key;
+                        e.preventDefault();
+                    }
+                }
+                if (gameOver && gameSubmitted && e.key === "Enter") {
+                    restartGame();
+                    e.preventDefault();
+                }
+            });
+            window.addEventListener("keyup", (e) => {
+                if (
+                    [
+                        "ArrowLeft",
+                        "ArrowRight",
+                        "ArrowUp",
+                        "ArrowDown",
+                        "a",
+                        "d",
+                    ].includes(e.key)
+                ) {
+                    keys[e.key] = false;
+                    e.preventDefault();
+                }
+            });
+
+            // ---- Road ----
+            function initRoad() {
+                roadSegments = [];
+                for (let i = 0; i < SEG_COUNT; i++) {
+                    roadSegments.push({ x: GW / 2 });
+                }
+                roadTargetX = GW / 2;
+            }
+            initRoad();
+
+            function pushRoadSegment(priceDir) {
+                // Smooth: shift target, road will lerp toward it
+                const shift = priceDir * 4;
+                roadTargetX += shift;
+                roadTargetX = Math.max(
+                    ROAD_W / 2 + 20,
+                    Math.min(GW - ROAD_W / 2 - 20, roadTargetX),
+                );
+            }
+
+            function feedGamePrice(price) {
+                if (gameOver) return;
+                if (lastPriceForGame !== null) {
+                    const dir =
+                        price > lastPriceForGame
+                            ? 1
+                            : price < lastPriceForGame
+                              ? -1
+                              : 0;
+                    pushRoadSegment(dir);
+                }
+                lastPriceForGame = price;
+            }
+
+            const LERP = 0.12;
+
+            function restartGame() {
+                carX = GW / 2;
+                scrollOffset = 0;
+                score = 0;
+                gameOver = false;
+                gameSubmitted = false;
+                playerNameInput = "";
+                lastPriceForGame = null;
+                scoreEl.textContent = "SCORE: 0";
+                initRoad();
+            }
+
+            function drawGame() {
+                gctx.clearRect(0, 0, GW, GH);
+
+                // Grass
+                gctx.fillStyle = "#1a3a1a";
+                gctx.fillRect(0, 0, GW, GH);
+
+                // Road segments
+                for (let i = 0; i < roadSegments.length; i++) {
+                    const y = i * SEG_H - scrollOffset;
+                    if (y < -SEG_H || y > GH + SEG_H) continue;
+
+                    const left = roadSegments[i].x - ROAD_W / 2;
+                    // Road surface
+                    gctx.fillStyle = "#2a2a2a";
+                    gctx.fillRect(left, y, ROAD_W, SEG_H + 1);
+                    // Edge lines
+                    gctx.fillStyle = "#d4a017";
+                    gctx.fillRect(left, y, 2, SEG_H);
+                    gctx.fillRect(left + ROAD_W - 2, y, 2, SEG_H);
+                    // Dashed center
+                    if (Math.floor(y / 12) % 2 === 0) {
+                        gctx.fillStyle = "#555";
+                        gctx.fillRect(roadSegments[i].x - 1, y, 2, SEG_H);
+                    }
+                }
+
+                // Road position at car
+                const carSegIdx = Math.floor((CAR_Y + scrollOffset) / SEG_H);
+                const carRoadX =
+                    roadSegments[Math.min(carSegIdx, roadSegments.length - 1)]
+                        ?.x ?? GW / 2;
+                const roadLeft = carRoadX - ROAD_W / 2;
+                const roadRight = carRoadX + ROAD_W / 2;
+
+                // Car body
+                const cl = carX - CAR_W / 2;
+                const ct = CAR_Y - CAR_H / 2;
+                gctx.fillStyle = "#e04040";
+                gctx.beginPath();
+                gctx.moveTo(cl + CAR_W / 2, ct);
+                gctx.lineTo(cl + CAR_W - 4, ct + 12);
+                gctx.lineTo(cl + CAR_W, ct + CAR_H - 8);
+                gctx.lineTo(cl + CAR_W - 4, ct + CAR_H);
+                gctx.lineTo(cl + 4, ct + CAR_H);
+                gctx.lineTo(cl, ct + CAR_H - 8);
+                gctx.lineTo(cl + 4, ct + 12);
+                gctx.closePath();
+                gctx.fill();
+                // Windshield
+                gctx.fillStyle = "#87ceeb";
+                gctx.fillRect(cl + 8, ct + 16, CAR_W - 16, 10);
+                // Wheels
+                gctx.fillStyle = "#111";
+                gctx.fillRect(cl - 2, ct + 8, 5, 10);
+                gctx.fillRect(cl + CAR_W - 3, ct + 8, 5, 10);
+                gctx.fillRect(cl - 2, ct + CAR_H - 16, 5, 10);
+                gctx.fillRect(cl + CAR_W - 3, ct + CAR_H - 16, 5, 10);
+
+                // Collision
+                if (
+                    !gameOver &&
+                    (carX - 4 < roadLeft || carX + 4 > roadRight)
+                ) {
+                    gameOver = true;
+                }
+
+                if (gameOver) {
+                    gctx.fillStyle = "rgba(0,0,0,0.65)";
+                    gctx.fillRect(0, 0, GW, GH);
+                    gctx.textAlign = "center";
+
+                    if (!gameSubmitted) {
+                        gctx.fillStyle = "#f07178";
+                        gctx.font = "bold 22px -apple-system, sans-serif";
+                        gctx.fillText("💥 GAME OVER", GW / 2, GH / 2 - 36);
+                        gctx.fillStyle = "#e6e1cf";
+                        gctx.font = "14px -apple-system, sans-serif";
+                        gctx.fillText(
+                            "Твой счёт: " + Math.floor(score),
+                            GW / 2,
+                            GH / 2 - 8,
+                        );
+                        gctx.fillStyle = "#5c6370";
+                        gctx.font = "13px -apple-system, sans-serif";
+                        gctx.fillText(
+                            "Введи имя и нажми Enter:",
+                            GW / 2,
+                            GH / 2 + 20,
+                        );
+                        gctx.fillStyle = "#73d0a1";
+                        gctx.font = "bold 18px monospace";
+                        gctx.fillText(
+                            (playerNameInput || "______") +
+                                (Date.now() % 1000 < 500 ? "|" : ""),
+                            GW / 2,
+                            GH / 2 + 48,
+                        );
+                    } else {
+                        gctx.fillStyle = "#73d0a1";
+                        gctx.font = "bold 20px -apple-system, sans-serif";
+                        gctx.fillText(
+                            "🏆 Результат сохранён!",
+                            GW / 2,
+                            GH / 2 - 12,
+                        );
+                        gctx.fillStyle = "#e6e1cf";
+                        gctx.font = "14px -apple-system, sans-serif";
+                        gctx.fillText(
+                            "Нажми Enter чтобы играть снова",
+                            GW / 2,
+                            GH / 2 + 20,
+                        );
+                    }
+                    return;
+                }
+
+                score += 0.1;
+                scoreEl.textContent = "SCORE: " + Math.floor(score);
+            }
+
+            function gameLoop() {
+                if (!gameOver) {
+                    scrollOffset += 3;
+                    if (scrollOffset >= SEG_H) {
+                        scrollOffset -= SEG_H;
+                        roadSegments.shift();
+                        const last = roadSegments[roadSegments.length - 1];
+                        // Smooth lerp toward target
+                        const nx = last.x + (roadTargetX - last.x) * LERP;
+                        roadSegments.push({ x: nx });
+                    }
+
+                    if (keys["ArrowLeft"] || keys["a"]) carX -= 4;
+                    if (keys["ArrowRight"] || keys["d"]) carX += 4;
+                    carX = Math.max(10, Math.min(GW - 10, carX));
+                }
+
+                drawGame();
+                requestAnimationFrame(gameLoop);
+            }
+
+            gameLoop();
+
+            connect();
+            tick();
+        </script>
+    </body>
+</html>
